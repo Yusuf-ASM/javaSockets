@@ -5,6 +5,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -24,15 +25,39 @@ public class crypto {
     private static PrivateKey privateKey;
     private static PublicKey publicKey;
 
+    public static void initializeAES() {
+        try {
+            iv = new byte[16];
+            SecureRandom.getInstanceStrong().nextBytes(iv);
+            ivspec = new IvParameterSpec(iv);
+
+            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+            keyGenerator.init(keySize);
+            key = keyGenerator.generateKey();
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("invalid algorithm");
+        }
+    }
+
+    public static void initializeRSA() {
+        try {
+            KeyPairGenerator keyPair = KeyPairGenerator.getInstance("RSA");
+            KeyPair pair = keyPair.generateKeyPair();
+            privateKey = pair.getPrivate();
+            publicKey = pair.getPublic();
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("invalid algorithm");
+        }
+    }
 
     public static byte[] getPublicKey() {
         return publicKey.getEncoded();
     }
 
 
-    public static byte[]encryptFileAES(String path) {
+    public static byte[] encryptFileAES(String path) {
         try (FileInputStream file = new FileInputStream(path)) {
-            return encryptAES(file.readAllBytes());
+            return encryptAES(file.readAllBytes(), 0);
         } catch (FileNotFoundException e) {
             System.out.println("File not found");
         } catch (IOException e) {
@@ -93,6 +118,7 @@ public class crypto {
         return null;
     }
 
+    //////////////////////////////////////////////////////////////////////////
     public static byte[] encryptAES(String plain) {
         if (key == null) return null;
 
@@ -106,13 +132,14 @@ public class crypto {
         return null;
     }
 
-    public static byte[] encryptAES(byte[] plain) {
+    public static byte[] encryptAES(byte[] plain, int mode) {
         if (key == null) return null;
 
         try {
             Cipher cipher = Cipher.getInstance(AES);
             cipher.init(Cipher.ENCRYPT_MODE, key, ivspec);
-            return cipher.doFinal(plain);
+            if (mode == 1) return cipher.update(plain);
+            if (mode == 0) return cipher.doFinal(plain);
         } catch (Exception e) {
             System.out.println("aes encryption error");
 
@@ -120,13 +147,14 @@ public class crypto {
         return null;
     }
 
-    public static byte[] decryptAES(byte[] encrypted) {
+    public static byte[] decryptAES(byte[] encrypted, int mode) {
         if (key == null) return null;
 
         try {
             Cipher cipher = Cipher.getInstance(AES);
             cipher.init(Cipher.DECRYPT_MODE, key, ivspec);
-            return cipher.update(encrypted);
+            if (mode == 1) return cipher.update(encrypted);
+            if (mode == 0) return cipher.doFinal(encrypted);
         } catch (Exception e) {
             System.out.println(e);
             System.out.println("aes decryption error");
@@ -134,20 +162,8 @@ public class crypto {
         }
         return null;
     }
-    public static byte[] decryptAES2(byte[] encrypted) {
-        if (key == null) return null;
 
-        try {
-            Cipher cipher = Cipher.getInstance(AES);
-            cipher.init(Cipher.DECRYPT_MODE, key, ivspec);
-            return cipher.doFinal(encrypted);
-        } catch (Exception e) {
-            System.out.println(e);
-            System.out.println("aes decryption error");
 
-        }
-        return null;
-    }
     public static String decryptAES(String encrypted) {
         if (key == null) return null;
         byte[] plain = string2byte(encrypted);
@@ -162,41 +178,17 @@ public class crypto {
         return null;
     }
 
-    public static void initializeAES() {
-        try {
-            iv = new byte[16];
-            SecureRandom.getInstanceStrong().nextBytes(iv);
-            ivspec = new IvParameterSpec(iv);
 
-            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-            keyGenerator.init(keySize);
-            key = keyGenerator.generateKey();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("invalid algorithm");
-        }
-    }
-
-    public static void initializeRSA() {
-        try {
-            KeyPairGenerator keyPair = KeyPairGenerator.getInstance("RSA");
-            KeyPair pair = keyPair.generateKeyPair();
-            privateKey = pair.getPrivate();
-            publicKey = pair.getPublic();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("invalid algorithm");
-        }
-    }
-
-    public static void keyAES(int size) {
-        KeyGenerator keyGenerator;
-        try {
-            keyGenerator = KeyGenerator.getInstance(AES);
-            keyGenerator.init(256);
-            key = keyGenerator.generateKey();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("invalid algorithm");
-        }
-    }
+//    public static void keyAES(int size) {
+//        KeyGenerator keyGenerator;
+//        try {
+//            keyGenerator = KeyGenerator.getInstance(AES);
+//            keyGenerator.init(256);
+//            key = keyGenerator.generateKey();
+//        } catch (NoSuchAlgorithmException e) {
+//            System.out.println("invalid algorithm");
+//        }
+//    }
 
     public static byte[] encryptRSA(String plain) {
         try {
@@ -221,7 +213,8 @@ public class crypto {
         return null;
     }
 
-    public static String hashing(String file, String algorithm) {
+    /////////////////////////////////////////////////////////////////
+    public static String hashingFile(File file, String algorithm) {
         try (FileInputStream fileStream = new FileInputStream(file)) {
             MessageDigest digest = MessageDigest.getInstance(algorithm);
             digest.update(fileStream.readAllBytes());
@@ -241,8 +234,8 @@ public class crypto {
         return null;
     }
 
-    public static boolean checker(String file, String algorithm, String originalHash) {
-        String hash = hashing(file, algorithm);
+    public static boolean checkerFile(File file, String algorithm, String originalHash) {
+        String hash = hashingFile(file, algorithm);
         return hash != null && originalHash.contentEquals(hash);
     }
 

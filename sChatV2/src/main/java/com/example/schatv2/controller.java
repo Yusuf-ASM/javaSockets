@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ public class controller implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        transfer.receiveTextThread(textArea);
+        transfer.receiveThread(textArea);
 
     }
 
@@ -40,7 +41,7 @@ public class controller implements Initializable {
         if (content.isEmpty()) {
             return;
         }
-        textArea.appendText(transfer.Sender+": " + content + "\n");
+        textArea.appendText(transfer.Sender + ": " + content + "\n");
         message.clear();
         transfer.sendText(content);
     }
@@ -48,11 +49,19 @@ public class controller implements Initializable {
 
     @FXML
     private void sendFile() throws IOException {
-        FXMLLoader root = new FXMLLoader(getClass().getResource("init.fxml"));
-        Scene scene = new Scene(root.load(), 600, 500);
-        stage = (Stage) sendf.getScene().getWindow();
-        stage.setScene(scene);
-        stage.show();
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Resource File");
+
+        String path = fileChooser.showOpenDialog(stage).getAbsolutePath();
+//        System.out.println(path);
+        transfer.sendFile(path);
+
+//        FXMLLoader root = new FXMLLoader(getClass().getResource("init.fxml"));
+//        Scene scene = new Scene(root.load(), 600, 500);
+//        stage = (Stage) sendf.getScene().getWindow();
+//        stage.setScene(scene);
+//        stage.show();
     }
 
 

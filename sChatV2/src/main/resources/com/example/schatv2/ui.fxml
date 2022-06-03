@@ -24,13 +24,13 @@
                             <MenuItem text="Open"/>
                             <MenuItem text="Save"/>
                             <MenuItem text="Save As"/>
-                            <SeparatorMenuItem  />
+                            <SeparatorMenuItem/>
                             <MenuItem text="Exit"/>
                         </items>
                     </Menu>
                 </menus>
             </MenuBar>
-<!--            <Label text="Secure Chat" style="-fx-font-size: 20; -fx-font-weight: BOLD"/>-->
+            <!--            <Label text="Secure Chat" style="-fx-font-size: 20; -fx-font-weight: BOLD"/>-->
 
         </VBox>
     </top>
@@ -46,7 +46,6 @@
             <Button fx:id="sendm" text="send" onAction="#sendMessage"/>
         </HBox>
     </bottom>
-
 
 
 </BorderPane>

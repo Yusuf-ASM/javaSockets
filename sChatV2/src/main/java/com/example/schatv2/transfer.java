@@ -12,11 +12,11 @@ public class transfer {
 
     private static Socket socket;
     private static boolean initialized = false;
-    private static FileWriter fileWriter;
+//    private static FileWriter fileWriter;
 
     private static BufferedInputStream bufferedInputStream;
     private static BufferedOutputStream bufferedOutputStream;
-    private static int bufferSize = 10 * 1024;
+    private static final int bufferSize = 10 * 1024;
 
     public static String Sender;
     public static String Receiver;
@@ -82,6 +82,7 @@ public class transfer {
         } catch (IOException e) {
             System.out.println(e);
             System.out.println("Error receiving mode");
+            System.exit(0);
         }
 
         return -1;
@@ -93,13 +94,14 @@ public class transfer {
         try {
             dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
-            String hash = (dataInputStream.readUTF());
+
+            String hash = crypto.decryptAES(dataInputStream.readUTF());
             String message = crypto.decryptAES(dataInputStream.readUTF());
+
             if (crypto.checkerText(message, "SHA-256", hash)) {
                 System.out.println("received");
-
+                return message;
             }
-            return message;
 
         } catch (IOException e) {
             System.out.println(e);
@@ -109,48 +111,45 @@ public class transfer {
 
     }
 
-    public static void receiveThread(TextArea textArea) {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (socket.isConnected()) {
-                    int mode = receiveMode();
-                    if (mode == 0) {
-                        String tmp = receiveText();
-                        if (tmp != null) {
-                            textArea.appendText(Receiver + ": " + tmp + "\n");
-                        }
-                    } else if (mode == 1) {
-                        receiveFile();
-
-                    }
-                }
-
-            }
-        });
-        thread.setDaemon(true);
-        thread.start();
-
-    }
-
     public static boolean sendText(String text) {
         if (!initialized) return false;
         try {
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
             dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream.writeInt(0);
-            String hash = crypto.hashingText(text, "SHA-256");
-//            dataOutputStream.writeUTF(crypto.byte2string(crypto.encryptAES(hash)));
-            dataOutputStream.writeUTF(hash);
-            dataOutputStream.writeUTF(crypto.byte2string(crypto.encryptAES(text)));
-            System.out.println("sent");
 
-//            dataOutputStream.writeUTF(text);
+            String hash = crypto.hashingText(text, "SHA-256");
+
+            dataOutputStream.writeUTF(crypto.byte2string(crypto.encryptAES(hash)));
+            dataOutputStream.writeUTF(crypto.byte2string(crypto.encryptAES(text)));
+
+            return true;
         } catch (IOException e) {
             System.out.println(e);
             System.out.println("Error sending message");
         }
         return false;
+    }
+
+    public static void receiveThread(TextArea textArea) {
+        Thread thread = new Thread(() -> {
+            while (socket.isConnected()) {
+                int mode = receiveMode();
+                if (mode == 0) {
+                    String tmp = receiveText();
+                    if (tmp != null) {
+                        textArea.appendText(Receiver + ": " + tmp + "\n");
+                    }
+                } else if (mode == 1) {
+                    receiveFile();
+
+                }
+            }
+
+        });
+        thread.setDaemon(true);
+        thread.start();
+
     }
 
     public static boolean receiveFile() {
@@ -161,67 +160,78 @@ public class transfer {
                 System.out.println("Error creating receveing folder ");
                 return false;
             }
-
             dataInputStream = new DataInputStream(socket.getInputStream());
-            FileOutputStream fileOutputStream = new FileOutputStream("received/" + dataInputStream.readUTF());
+            String hash = crypto.decryptAES(dataInputStream.readUTF());
+            File file = new File("received/" + dataInputStream.readUTF());
+            FileOutputStream fileOutputStream = new FileOutputStream(file);
             bufferedInputStream = new BufferedInputStream(dataInputStream);
             bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
 
-            long size = dataInputStream.readLong();
-            System.out.println(size);
-            byte[] buffer = new byte[10256];
+            long fileLength = dataInputStream.readLong();
+            int lastblock = (int) (fileLength - (fileLength / 10240) * 10240);
+
+            byte[] buffer = new byte[bufferSize + 16];
+            byte[] decrypted;
 
             long startTime = System.nanoTime();
-            int bytesRead = 0;
+            int bytesRead;
             while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
-                byte[] yp;
+//                System.out.println(bytesRead);
 
-
-//                System.out.println(buffer.length);
-//                crypto.decryptAES(buffer);
                 if (bytesRead == 10256) {
                     bytesRead = 10240;
-                    yp = crypto.decryptAES(buffer);
+                    decrypted = crypto.decryptAES(buffer, 1);
                 } else {
-                    bytesRead = 3479;
-                    yp = crypto.decryptAES2(buffer);
+                    bytesRead = lastblock;
+                    decrypted = crypto.decryptAES(buffer, 0);
+                    bufferedOutputStream.write(decrypted, 0, bytesRead);
+                    break;
                 }
-//                System.out.println("y = " + yp.length + " b = " + buffer.length + " s = " + bytesRead);
-                bufferedOutputStream.write(yp, 0, bytesRead);
+                bufferedOutputStream.write(decrypted, 0, bytesRead);
             }
 
             long stopTime = System.nanoTime();
 
             bufferedOutputStream.flush();
+            fileOutputStream.close();
+
 
             System.out.printf("Done on %f! %n", (stopTime - startTime) / 100_000_0000.0);
+            if (crypto.checkerFile(file, "SHA256", hash)) {
+                System.out.println("file is ok");
+                return true;
 
-            return true;
+            }
+            file.delete();
+            System.out.println("corrupted");
         } catch (IOException e) {
             System.out.println(e);
             System.out.println("Error receiving file");
-            return false;
         }
+        return false;
     }
 
-    public static boolean sendFile(String path) throws IOException {
+    public static boolean sendFile(String path) {
         try {
             File file = new File(path);
-            dataOutputStream = new DataOutputStream(socket.getOutputStream());
+
             FileInputStream fileInputStream = new FileInputStream(file);
+            dataOutputStream = new DataOutputStream(socket.getOutputStream());
             bufferedInputStream = new BufferedInputStream(fileInputStream);
             bufferedOutputStream = new BufferedOutputStream(dataOutputStream);
 
-            dataOutputStream.writeUTF(file.getName());
             int size = bufferSize;
             long pre = -1, nex, current = 0, fileLength = file.length();
+            byte[] encrypted;
             long startTime = System.nanoTime();
-            System.out.println(fileLength);
+            byte[] buffer = new byte[size];
 
+            dataOutputStream.writeInt(1);
+            String hash = crypto.hashingFile(file, "SHA256");
+            dataOutputStream.writeUTF(crypto.byte2string(crypto.encryptAES(hash)));
+            dataOutputStream.writeUTF(file.getName());
             dataOutputStream.writeLong(fileLength);
 
-
-            byte[] buffer = new byte[size];
 
             while (current != file.length()) {
                 if (fileLength - current >= size)
@@ -233,20 +243,20 @@ public class transfer {
                 }
 
                 bufferedInputStream.read(buffer, 0, size);
-//                System.out.println(size);
-                byte[] yp = crypto.encryptAES(buffer);
-//                System.out.println("y = " + yp.length + " b = " + buffer.length + " s = " + size);
-                bufferedOutputStream.write(yp, 0, yp.length);
+                encrypted = crypto.encryptAES(buffer, 0);
+                bufferedOutputStream.write(encrypted, 0, encrypted.length);
+
 
                 nex = (current * 100) / fileLength;
-                if (pre != nex)
-//                    System.out.println("Sending file ... " + nex + "% complete!");
+                if (pre != nex) {
+                    System.out.println("Sending file ... " + nex + "% complete!");
                     pre = nex;
+                }
             }
             long stopTime = System.nanoTime();
 
             bufferedOutputStream.flush();
-            bufferedOutputStream.close();
+            fileInputStream.close();
 
 
             System.out.printf("Done on %f! %n", (stopTime - startTime) / 100_000_0000.0);
