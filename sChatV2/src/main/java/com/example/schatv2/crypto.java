@@ -118,7 +118,6 @@ public class crypto {
         return null;
     }
 
-    //////////////////////////////////////////////////////////////////////////
     public static byte[] encryptAES(String plain) {
         if (key == null) return null;
 
@@ -179,17 +178,6 @@ public class crypto {
     }
 
 
-//    public static void keyAES(int size) {
-//        KeyGenerator keyGenerator;
-//        try {
-//            keyGenerator = KeyGenerator.getInstance(AES);
-//            keyGenerator.init(256);
-//            key = keyGenerator.generateKey();
-//        } catch (NoSuchAlgorithmException e) {
-//            System.out.println("invalid algorithm");
-//        }
-//    }
-
     public static byte[] encryptRSA(String plain) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
@@ -213,7 +201,6 @@ public class crypto {
         return null;
     }
 
-    /////////////////////////////////////////////////////////////////
     public static String hashingFile(File file, String algorithm) {
         try (FileInputStream fileStream = new FileInputStream(file)) {
             MessageDigest digest = MessageDigest.getInstance(algorithm);

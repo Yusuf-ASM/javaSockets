@@ -20,7 +20,7 @@
                 <menus>
                     <Menu text="File">
                         <items>
-                            <MenuItem text="Server ip"/>
+                            <MenuItem text="Server ip"  />
                             <MenuItem text="Open"/>
                             <MenuItem text="Save"/>
                             <MenuItem text="Save As"/>

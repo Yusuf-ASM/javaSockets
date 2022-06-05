@@ -21,7 +21,7 @@ public class transfer {
     public static String Sender;
     public static String Receiver;
 
-    public static void initializeClient(String ip, int port, String name) {
+    public static boolean initializeClient(String ip, int port, String name) {
         try {
             socket = new Socket(ip, port);
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
@@ -39,16 +39,17 @@ public class transfer {
             dataOutputStream.writeUTF(Sender);
 
             Receiver = dataInputStream.readUTF();
-
+            return true;
 
         } catch (IOException e) {
             System.out.println(e);
             System.out.println("Error initializing the client side");
         }
+        return false;
     }
 
 
-    public static void initializeServer(int port, String name) {
+    public static boolean initializeServer(int port, String name) {
         try {
             ServerSocket serverSocket = new ServerSocket(port);
             socket = serverSocket.accept();
@@ -65,11 +66,12 @@ public class transfer {
             Receiver = dataInputStream.readUTF();
 
             dataOutputStream.writeUTF(Sender);
-
+            return true;
         } catch (IOException e) {
             System.out.println(e);
             System.out.println("Error initializing the sever side");
         }
+        return false;
     }
 
     public static int receiveMode() {

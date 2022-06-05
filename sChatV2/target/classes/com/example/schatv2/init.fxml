@@ -8,6 +8,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.text.Text?>
+<?import javafx.scene.control.ProgressBar?>
 <BorderPane xmlns:fx="borderPane" fx:controller="com.example.schatv2.initController">
     <center>
         <VBox alignment="CENTER" spacing="10">
@@ -16,6 +17,7 @@
             <TextField fx:id="ip" promptText="Server IP" disable="true" maxWidth="200"/>
             <Button fx:id="done" text="let's chat" onAction="#done"/>
             <Text fx:id="error" text="errrrrrrrrrrrror" visible="false" fill="red"/>
+            <ProgressBar fx:id="bar" visible="false"></ProgressBar>
         </VBox>
 
     </center>
