@@ -3,20 +3,18 @@ package com.example.schatv2;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
 
-public class initController implements Initializable {
+public class initController {
 
-    @FXML
-    private TextArea textArea;
 
     @FXML
     private TextField ip;
@@ -37,11 +35,6 @@ public class initController implements Initializable {
     private int Type;
     private int processing = 0;
 
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-
-
-    }
 
 
     @FXML
@@ -56,7 +49,7 @@ public class initController implements Initializable {
     }
 
     @FXML
-    private void done() throws IOException {
+    private void done() {
         if (processing == 1) {
             error.setVisible(true);
 

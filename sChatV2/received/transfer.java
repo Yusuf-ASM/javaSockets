@@ -21,47 +21,42 @@ public class transfer {
     public static String Sender;
     public static String Receiver;
     private static RSA rsa = new RSA();
-
-    public static boolean initializeClient(String ip, int port, String name) {
+    public static void initializeClient(String ip, int port, String name) {
         try {
             socket = new Socket(ip, port);
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
             dataInputStream = new DataInputStream(socket.getInputStream());
 
             dataOutputStream.writeUTF(rsa.getPublicKey());
-            dataOutputStream.writeUTF(rsa.getN());
-            crypto.dedumpAES(rsa.decrypt(dataInputStream.readUTF()));
+            crypto.dedumpAES(dataInputStream.readUTF());
 
-            initialized = true;
             System.out.println("done client");
+            initialized = true;
 
             Sender = name;
             dataOutputStream.writeUTF(Sender);
 
             Receiver = dataInputStream.readUTF();
-            return true;
+
 
         } catch (IOException e) {
             System.out.println(e);
             System.out.println("Error initializing the client side");
         }
-        return false;
     }
 
 
-    public static boolean initializeServer(int port, String name) {
+    public static void initializeServer(int port, String name) {
         try {
             ServerSocket serverSocket = new ServerSocket(port);
             socket = serverSocket.accept();
-            serverSocket.close();
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
             dataInputStream = new DataInputStream(socket.getInputStream());
-
             crypto.initializeAES();
-            rsa.setPublicKey(dataInputStream.readUTF());
-            rsa.setN(dataInputStream.readUTF());
 
+            rsa.setPublicKey(dataInputStream.readUTF());
             dataOutputStream.writeUTF(rsa.encrypt(crypto.dumpAES()));
+
 
             System.out.println("done sever");
             initialized = true;
@@ -70,12 +65,11 @@ public class transfer {
             Receiver = dataInputStream.readUTF();
 
             dataOutputStream.writeUTF(Sender);
-            return true;
+
         } catch (IOException e) {
             System.out.println(e);
             System.out.println("Error initializing the sever side");
         }
-        return false;
     }
 
     public static int receiveMode() {
@@ -88,8 +82,7 @@ public class transfer {
         } catch (IOException e) {
             System.out.println(e);
             System.out.println("Error receiving mode");
-//            System.exit(0);
-
+            System.exit(0);
         }
 
         return -1;
@@ -140,8 +133,8 @@ public class transfer {
 
     public static void receiveThread(TextArea textArea) {
         Thread thread = new Thread(() -> {
-            int mode;
-            while ((mode = receiveMode()) != -1) {
+            while (socket.isConnected()) {
+                int mode = receiveMode();
                 if (mode == 0) {
                     String tmp = receiveText();
                     if (tmp != null) {
