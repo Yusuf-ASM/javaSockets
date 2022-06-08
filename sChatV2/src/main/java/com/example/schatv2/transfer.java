@@ -12,7 +12,6 @@ public class transfer {
 
     private static Socket socket;
     private static boolean initialized = false;
-//    private static FileWriter fileWriter;
 
     private static BufferedInputStream bufferedInputStream;
     private static BufferedOutputStream bufferedOutputStream;
@@ -21,6 +20,7 @@ public class transfer {
     public static String Sender;
     public static String Receiver;
     private static RSA rsa = new RSA();
+    private static AES aes = new AES();
 
     public static boolean initializeClient(String ip, int port, String name) {
         try {
@@ -30,7 +30,7 @@ public class transfer {
 
             dataOutputStream.writeUTF(rsa.getPublicKey());
             dataOutputStream.writeUTF(rsa.getN());
-            crypto.dedumpAES(rsa.decrypt(dataInputStream.readUTF()));
+            aes.dedumpAES(rsa.decrypt(dataInputStream.readUTF()));
 
             initialized = true;
             System.out.println("done client");
@@ -57,11 +57,11 @@ public class transfer {
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
             dataInputStream = new DataInputStream(socket.getInputStream());
 
-            crypto.initializeAES();
+            aes.initializeAES();
             rsa.setPublicKey(dataInputStream.readUTF());
             rsa.setN(dataInputStream.readUTF());
 
-            dataOutputStream.writeUTF(rsa.encrypt(crypto.dumpAES()));
+            dataOutputStream.writeUTF(rsa.encrypt(aes.dumpAES()));
 
             System.out.println("done sever");
             initialized = true;
@@ -88,8 +88,6 @@ public class transfer {
         } catch (IOException e) {
             System.out.println(e);
             System.out.println("Error receiving mode");
-//            System.exit(0);
-
         }
 
         return -1;
@@ -102,10 +100,10 @@ public class transfer {
             dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
-            String hash = crypto.decryptAES(dataInputStream.readUTF());
-            String message = crypto.decryptAES(dataInputStream.readUTF());
+            String hash = aes.decryptAES(dataInputStream.readUTF());
+            String message = aes.decryptAES(dataInputStream.readUTF());
 
-            if (crypto.checkerText(message, "SHA-256", hash)) {
+            if (aes.checkerText(message, "SHA-256", hash)) {
                 System.out.println("received");
                 return message;
             }
@@ -125,10 +123,10 @@ public class transfer {
             dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream.writeInt(0);
 
-            String hash = crypto.hashingText(text, "SHA-256");
+            String hash = aes.hashingText(text, "SHA-256");
 
-            dataOutputStream.writeUTF(crypto.byte2string(crypto.encryptAES(hash)));
-            dataOutputStream.writeUTF(crypto.byte2string(crypto.encryptAES(text)));
+            dataOutputStream.writeUTF(aes.byte2string(aes.encryptAES(hash)));
+            dataOutputStream.writeUTF(aes.byte2string(aes.encryptAES(text)));
 
             return true;
         } catch (IOException e) {
@@ -168,7 +166,7 @@ public class transfer {
                 return false;
             }
             dataInputStream = new DataInputStream(socket.getInputStream());
-            String hash = crypto.decryptAES(dataInputStream.readUTF());
+            String hash = aes.decryptAES(dataInputStream.readUTF());
             File file = new File("received/" + dataInputStream.readUTF());
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             bufferedInputStream = new BufferedInputStream(dataInputStream);
@@ -183,14 +181,13 @@ public class transfer {
             long startTime = System.nanoTime();
             int bytesRead;
             while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
-//                System.out.println(bytesRead);
 
                 if (bytesRead == 10256) {
                     bytesRead = 10240;
-                    decrypted = crypto.decryptAES(buffer, 1);
+                    decrypted = aes.decryptAES(buffer, 1);
                 } else {
                     bytesRead = lastblock;
-                    decrypted = crypto.decryptAES(buffer, 0);
+                    decrypted = aes.decryptAES(buffer, 0);
                     bufferedOutputStream.write(decrypted, 0, bytesRead);
                     break;
                 }
@@ -204,7 +201,7 @@ public class transfer {
 
 
             System.out.printf("Done on %f! %n", (stopTime - startTime) / 100_000_0000.0);
-            if (crypto.checkerFile(file, "SHA256", hash)) {
+            if (aes.checkerFile(file, "SHA256", hash)) {
                 System.out.println("file is ok");
                 return true;
 
@@ -234,8 +231,8 @@ public class transfer {
             byte[] buffer = new byte[size];
 
             dataOutputStream.writeInt(1);
-            String hash = crypto.hashingFile(file, "SHA256");
-            dataOutputStream.writeUTF(crypto.byte2string(crypto.encryptAES(hash)));
+            String hash = aes.hashingFile(file, "SHA256");
+            dataOutputStream.writeUTF(aes.byte2string(aes.encryptAES(hash)));
             dataOutputStream.writeUTF(file.getName());
             dataOutputStream.writeLong(fileLength);
 
@@ -250,7 +247,7 @@ public class transfer {
                 }
 
                 bufferedInputStream.read(buffer, 0, size);
-                encrypted = crypto.encryptAES(buffer, 0);
+                encrypted = aes.encryptAES(buffer, 0);
                 bufferedOutputStream.write(encrypted, 0, encrypted.length);
 
 

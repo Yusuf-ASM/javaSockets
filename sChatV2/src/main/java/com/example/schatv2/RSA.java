@@ -55,12 +55,6 @@ public class RSA {
 
     }
 
-    public static void main(String[] args) {
-        RSA test = new RSA();
-        String tes = "test";
-        String tmp = test.encrypt(tes);
-        System.out.println(test.decrypt(tmp));
-    }
 
     public String getPublicKey() {
         return publicKey.toString();

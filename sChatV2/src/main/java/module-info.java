@@ -5,4 +5,5 @@ module com.example.schatv2 {
 
     opens com.example.schatv2 to javafx.fxml;
     exports com.example.schatv2;
+
 }

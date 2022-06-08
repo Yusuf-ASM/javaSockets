@@ -9,15 +9,9 @@
         <VBox style="-fx-alignment: CENTER">
             <MenuBar minHeight="10" style="-fx-background-color: inherit">
                 <Menu text="File">
-                    <!--                            <MenuItem text="Server ip"  />-->
-                    <!--                            <MenuItem text="Open"/>-->
-                    <!--                            <MenuItem text="Save"/>-->
-                    <!--                            <MenuItem text="Save As"/>-->
-                    <!--                            <SeparatorMenuItem/>-->
                     <MenuItem text="Exit" onAction="#exit"/>
                 </Menu>
             </MenuBar>
-            <!--            <Label text="Secure Chat" style="-fx-font-size: 20; -fx-font-weight: BOLD"/>-->
 
         </VBox>
     </top>
